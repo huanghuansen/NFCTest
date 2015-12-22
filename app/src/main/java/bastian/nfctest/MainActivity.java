@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
 import android.os.Bundle;
-import android.renderscript.ScriptGroup;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.telephony.TelephonyManager;
@@ -15,7 +14,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -33,8 +31,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
 import java.util.concurrent.TimeoutException;
 
 public class MainActivity extends AppCompatActivity {
@@ -44,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
     private GoogleApiClient client;
+    MainActivity parentView=this;
 
     boolean isCustomer;
     String mQueueName;
@@ -160,6 +157,19 @@ public class MainActivity extends AppCompatActivity {
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
+    public void showMessage(final String msg)
+    {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog dialog = new AlertDialog.Builder(parentView).create();
+                dialog.setTitle(msg);
+                dialog.show();
+            }
+        });
+
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -204,14 +214,15 @@ public class MainActivity extends AppCompatActivity {
                     mChannel = mCon.createChannel();
                     mQueueName = mChannel.queueDeclare().getQueue();
                     mChannel.queueBind(mQueueName, EXCHANGE_NAME, mQueueName);
-                    mChannel.basicConsume(mQueueName, new DefaultConsumer(mChannel)
+                    mChannel.basicConsume(mQueueName, true, new DefaultConsumer(mChannel)
                     {
                         @Override
                         public void handleDelivery(String consumerTag, Envelope envelope,
                                                    AMQP.BasicProperties properties, byte[] body) throws IOException {
                             String msg = new String(body, "UTF-8");
+                            appendText(msg);
                             try {
-                                JSONObject o = new JSONObject(msg);
+                                final JSONObject o = new JSONObject(msg);
                                 switch(o.getString("msg_type"))
                                 {
                                     case "nfc_ans_regal":
@@ -222,6 +233,9 @@ public class MainActivity extends AppCompatActivity {
                                         {
                                             mRegal = -1;
                                         }
+                                        break;
+                                    case "nfc_disp_msg":
+                                        parentView.showMessage(o.getJSONObject("msg").getString("msg"));
                                         break;
                                 }
                             } catch (JSONException e) {
