@@ -38,8 +38,13 @@ public class CardReader implements NfcAdapter.ReaderCallback {
                 parentView.appendText("Tag Connected: " + bytesToHexString(tag.getId()));
 
                 JSONObject o = new JSONObject();
-                if(parentView.isCustomer)
+                if(parentView.isCustomer) {
                     o.put("msg_type", "nfc_customer_con");
+                    if(parentView.dialog!=null) {
+                        parentView.dialog.dismiss();
+                        parentView.dialog=null;
+                    }
+                }
                 else
                     o.put("msg_type", "nfc_item_con");
 

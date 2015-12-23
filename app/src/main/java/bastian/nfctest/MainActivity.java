@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private GoogleApiClient client;
     MainActivity parentView=this;
+    AlertDialog dialog;
 
     boolean isCustomer;
     String mQueueName;
@@ -162,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                AlertDialog dialog = new AlertDialog.Builder(parentView).create();
+                dialog = new AlertDialog.Builder(parentView).create();
                 dialog.setTitle(msg);
                 dialog.show();
             }
