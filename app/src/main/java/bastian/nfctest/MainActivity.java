@@ -58,22 +58,41 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //App keeps screen on while open
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         textView = (TextView) findViewById(R.id.textfield);
+        //enable scrolling for text view
         textView.setMovementMethod(new ScrollingMovementMethod());
 
-        //Reader Regal Dialog
+
+        //*** Dialogs order ***
+        // 1 - Host dialog
+        // 2 - Type dialog
+        // 3 - Regal dialog
+
+        // dialogs call each other
+
+        //*** Declaration: Host dialog ***
+        final AlertDialog.Builder hostInput= new AlertDialog.Builder(this);
+        hostInput.setTitle("Enter IP");
+        final EditText editText = new EditText(this);
+        editText.setInputType(InputType.TYPE_CLASS_TEXT);
+        hostInput.setView(editText);
+        hostInput.setNeutralButton("OK", null);
+
+        //*** Declaration: Regal Dialog ***
         final AlertDialog.Builder regalInput = new AlertDialog.Builder(this);
         regalInput.setTitle("Enter Regal");
         final EditText regalEdit = new EditText(this);
+        //only numbers can be entered and keypad is shown
         regalEdit.setInputType(InputType.TYPE_CLASS_NUMBER);
         regalInput.setView(regalEdit);
         regalInput.setNeutralButton("OK", null);
 
-        //Reader type Dialog
+        //*** Declaration: Type Dialog ***
         final AlertDialog.Builder typeChooser = new AlertDialog.Builder(this);
         isCustomer = true;
         typeChooser.setSingleChoiceItems(new String[]{"Customer", "Item"}, 0, new DialogInterface.OnClickListener() {
@@ -88,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
         typeChooser.setNeutralButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                // *** Call: Regal Dialog ***
                 final AlertDialog regalDialog = regalInput.show();
                 regalDialog.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -131,20 +151,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //get Host dialog
-        final AlertDialog.Builder hostInput= new AlertDialog.Builder(this);
-        hostInput.setTitle("Enter IP");
-        final EditText editText = new EditText(this);
-        editText.setInputType(InputType.TYPE_CLASS_TEXT);
-        hostInput.setView(editText);
-        hostInput.setNeutralButton("OK", null);
-
+        //*** Call: Host Dialog ***
         final AlertDialog hostdialog = hostInput.show();
         hostdialog.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (connectServer(editText.getText().toString())) {
                     hostdialog.dismiss();
+                    //*** Call: Type Dialog ***
                     typeChooser.show();
                 } else {
                     hostdialog.setTitle("Error! Enter IP again");
@@ -193,6 +207,10 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Display text in the textfield
+     * @param s - text to print
+     */
     public void appendText(final String s) {
         runOnUiThread(new Runnable() {
             @Override
@@ -202,6 +220,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Establish connection to rabbitmq server
+     * @param ip - host
+     * @return - boolean whether connection was established or not
+     */
     public Boolean connectServer(final String ip) {
         final Boolean[] returnValue = new Boolean[1];
 
@@ -226,6 +249,7 @@ public class MainActivity extends AppCompatActivity {
                                 final JSONObject o = new JSONObject(msg);
                                 switch(o.getString("msg_type"))
                                 {
+                                    //answer if regal is valid
                                     case "nfc_ans_regal":
                                         if(o.getJSONObject("msg").getBoolean("result"))
                                         {
@@ -235,6 +259,7 @@ public class MainActivity extends AppCompatActivity {
                                             mRegal = -1;
                                         }
                                         break;
+                                    //display a message (e.g. "Kundenkarte auflegen")
                                     case "nfc_disp_msg":
                                         parentView.showMessage(o.getJSONObject("msg").getString("msg"));
                                         break;

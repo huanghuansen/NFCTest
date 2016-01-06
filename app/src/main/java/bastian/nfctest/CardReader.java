@@ -52,8 +52,10 @@ public class CardReader implements NfcAdapter.ReaderCallback {
                 msg.put("id", new BigInteger(tag.getId()).longValue());
                 msg.put("imei", ((TelephonyManager)(parentView.getSystemService(Context.TELEPHONY_SERVICE))).getDeviceId());
                 o.put("msg", msg);
+                //send message to ERP system that tag is connected with tag information
                 parentView.mChannel.basicPublish(parentView.EXCHANGE_NAME, "erp", null, o.toString().getBytes());
                 parentView.appendText("published");
+                //check every 200 ms if tag is still connected
                 while(isoDep.isConnected())
                 {
                     try {
@@ -67,6 +69,7 @@ public class CardReader implements NfcAdapter.ReaderCallback {
                     o.put("msg_type", "nfc_customer_discon");
                 else
                     o.put("msg_type", "nfc_item_discon");
+                //send message that tag is disconnected
                 parentView.mChannel.basicPublish(parentView.EXCHANGE_NAME, "erp", null, o.toString().getBytes());
             } catch (IOException e) {
                 parentView.appendText("Tag failed");
