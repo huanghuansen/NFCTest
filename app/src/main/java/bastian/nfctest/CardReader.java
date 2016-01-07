@@ -3,7 +3,7 @@ package bastian.nfctest;
 import android.content.Context;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
-import android.nfc.tech.IsoDep;
+import android.nfc.tech.NfcA;
 import android.telephony.TelephonyManager;
 
 import org.json.JSONException;
@@ -18,7 +18,7 @@ import java.math.BigInteger;
 public class CardReader implements NfcAdapter.ReaderCallback {
 
     public static int READER_FLAGS =
-            NfcAdapter.FLAG_READER_NFC_A;
+            NfcAdapter.FLAG_READER_NFC_A | NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK;
 
     private MainActivity parentView;
 
@@ -30,11 +30,11 @@ public class CardReader implements NfcAdapter.ReaderCallback {
 
     @Override
     public void onTagDiscovered(Tag tag) {
-        IsoDep isoDep= IsoDep.get(tag);
-        if(isoDep != null)
+        NfcA nfc = NfcA.get(tag);
+        if(nfc != null)
         {
             try {
-                isoDep.connect();
+                nfc.connect();
                 parentView.appendText("Tag Connected: " + bytesToHexString(tag.getId()));
 
                 JSONObject o = new JSONObject();
@@ -50,13 +50,13 @@ public class CardReader implements NfcAdapter.ReaderCallback {
 
                 JSONObject msg = new JSONObject();
                 msg.put("id", new BigInteger(tag.getId()).longValue());
-                msg.put("imei", ((TelephonyManager)(parentView.getSystemService(Context.TELEPHONY_SERVICE))).getDeviceId());
+                msg.put("imei", ((TelephonyManager) (parentView.getSystemService(Context.TELEPHONY_SERVICE))).getDeviceId());
                 o.put("msg", msg);
                 //send message to ERP system that tag is connected with tag information
                 parentView.mChannel.basicPublish(parentView.EXCHANGE_NAME, "erp", null, o.toString().getBytes());
                 parentView.appendText("published");
                 //check every 200 ms if tag is still connected
-                while(isoDep.isConnected())
+                while(nfc.isConnected())
                 {
                     try {
                         Thread.sleep(200);
