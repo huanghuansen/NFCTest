@@ -4,7 +4,9 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.telephony.TelephonyManager;
@@ -31,9 +33,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -49,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
     Integer mRegal;
 
     TextView textView;
+
+    TextToSpeech tts;
 
     Connection mCon;
     Channel mChannel;
@@ -67,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         //enable scrolling for text view
         textView.setMovementMethod(new ScrollingMovementMethod());
 
+        tts = new TextToSpeech(this, this);
 
         //*** Dialogs order ***
         // 1 - Host dialog
@@ -261,7 +267,12 @@ public class MainActivity extends AppCompatActivity {
                                         break;
                                     //display a message (e.g. "Kundenkarte auflegen")
                                     case "nfc_disp_msg":
-                                        parentView.showMessage(o.getJSONObject("msg").getString("msg"));
+
+                                        //speaker.setLanguage(Locale.GERMANY);
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                            tts.speak(o.getJSONObject("msg").getString("msg"), TextToSpeech.QUEUE_FLUSH, null, null);
+                                        }
+                                        //parentView.showMessage(o.getJSONObject("msg").getString("msg"));
                                         break;
                                 }
                             } catch (JSONException e) {
@@ -317,6 +328,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStop() {
         super.onStop();
+        tts.stop();
+        tts.shutdown();
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -332,5 +345,17 @@ public class MainActivity extends AppCompatActivity {
         );
         AppIndex.AppIndexApi.end(client, viewAction);
         client.disconnect();
+    }
+
+    @Override
+    public void onInit(int status) {
+        if(status==TextToSpeech.SUCCESS)
+        {
+            tts.setLanguage(Locale.GERMAN);
+            this.appendText("TTS Init Success");
+        } else
+        {
+            this.appendText("TTS Init Failed");
+        }
     }
 }
